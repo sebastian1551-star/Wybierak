@@ -4,39 +4,118 @@
 <head>
 <meta charset="utf-8" />
 <title>KLASYFIKACJA ODPADÓW</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <style>
-  body{font-family:Arial, Helvetica, sans-serif;margin:16px; display: block;}
-  input, button, select, textarea{font-size:12px;padding:8px;margin:6px 0}
-  .row{display:flex;gap:8px;align-items:center;max-width: 300px;}
-  #results{max-height:320px;overflow:auto;border:1px solid #ddd;padding:8px;border-radius:6px}
-  .item{padding:6px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center; max-width: 300px;}
-  .item:last-child{border-bottom:0}
-  .code{font-weight:700;margin-right:12px;white-space:nowrap}
-  .name{flex:1;padding-right:12px}
-  .selected{background:#eef9ff}
-  .controls{margin-top:8px}
-  small{color:#666}
-  .help{background:#f8f8f8;padding:10px;border-radius:6px;margin-top:10px}
-  .textarea {font-family: Verdana, Geneva, Tahoma, sans-serif; text-align: center; font-size: 11px;
+  /* Reset i tło */
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 10px;
+    background-color: #f4f4f9; /* Delikatne, czyste tło */
+    color: #333;
+    line-height: 1.4;
   }
+
+  /* Główny kontener */
   .main-container {
-  /* Ustalenie maksymalnej szerokości, aby kontener nie rozciągał się na całą stronę */
-  max-width: 600px; /* Dostosuj tę wartość do rzeczywistej szerokości twojego interfejsu */
+    max-width: 500px;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  }
+
+  h2 {
+    font-size: 16px;
+    text-align: center;
+    margin-top: 0;
+    color: #2c3e50;
+  }
+
+  /* Formularze i kontrolki */
+  input, button, select, textarea {
+    font-size: 12px;
+    padding: 10px;
+    margin: 5px 0;
+    width: 100%; /* Pełna szerokość na telefonie */
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  .row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  /* Lista wyników */
+  #results {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    background: #fafafa;
+  }
+
+  .item {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 12px;
+  }
+
+  .item:last-child { border-bottom: 0; }
   
-  /* Kluczowa funkcja do wyśrodkowania poziomego elementu blokowego: */
-  margin-left: auto;
-  margin-right: auto;
-  /* (lub krócej: margin: 0 auto;) */
-  
-  /* Dodatkowy styl, by to wyglądało jak na screenie */
-  padding-top: 20px;
-  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-}
+  .item:active, .selected {
+    background-color: #e3f2fd; /* Kolor przy wyborze */
+  }
+
+  .code {
+    font-weight: bold;
+    color: #007bff;
+    margin-right: 10px;
+    white-space: nowrap;
+  }
+
+  .name {
+    flex: 1;
+    word-break: break-word; /* Zawijanie długich nazw */
+  }
+
+  small {
+    display: block;
+    color: #777;
+    font-size: 11px;
+    margin-top: 15px;
+    text-align: center;
+  }
+
+  /* Specyficzne dla tekstu */
+  .textarea-display {
+    font-family: inherit;
+    font-size: 11px;
+    text-align: left;
+    background: #fff;
+    padding: 8px;
+    border: 1px dashed #bbb;
+  }
 </style>
 </head>
 <body>
 
+<div class="main-container">
+  <h2>Klasyfikacja Odpadów</h2>
+  
+  <div class="controls">
+    <input type="text" placeholder="Szukaj kodu lub nazwy...">
+  </div>
 <h2>KODY ODPADÓW 2020</h2>
 <div class="row">
   <input id="search" placeholder="Wyszukaj kod lub nazwę..." style="flex:1"/>
