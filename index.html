@@ -28,8 +28,8 @@
   }
   .search-box {
     width: 100%;
-    font-size: 11px;
-    padding: 6px;
+    font-size: 14px;
+    padding: 8px;
     margin-bottom: 5px;
     border: 1px solid #bbb;
     border-radius: 3px;
@@ -42,27 +42,96 @@
     border: 1px solid #eee;
     background: #fff;
   }
+  
+  /* POPRAWIONY UKŁAD POZIOMY */
   .item {
-    padding: 6px 4px;
+    padding: 8px 4px;
     border-bottom: 1px solid #f2f2f2;
-    display: flex;
-    font-size: 11px;
+    display: flex; /* Układ obok siebie */
+    flex-direction: row;
+    align-items: flex-start;
+    font-size: 12px;
     cursor: pointer;
-    user-select: all; /* Ułatwia zaznaczanie tekstu */
+    user-select: all;
   }
   .item:active { background: #d0ebff; }
+
   .code {
     font-weight: bold;
     color: #d32f2f;
-    margin-right: 8px;
-    min-width: 55px;
+    margin-right: 12px;
+    min-width: 65px;     /* Stała szerokość dla kodu */
+    white-space: nowrap; /* Kod się nie łamie */
   }
-  .name { flex: 1; }
+
+  .name { 
+    flex: 1; 
+    line-height: 1.2;
+  }
+
+  /* STYL PODŚWIETLENIA */
+  mark {
+    background: #ffeb3b;
+    color: #000;
+    padding: 0 1px;
+    border-radius: 2px;
+  }
+
   .hidden { display: none !important; }
 </style>
 </head>
 <body>
 
+<div class="main-container">
+  <h2>Klasyfikacja Odpadów</h2>
+  <input type="text" id="searchInput" class="search-box" placeholder="Szukaj kodu lub nazwy..." oninput="filterResults()">
+  
+  <div id="results">
+    <div class="item">
+      <span class="code">15 01 01</span>
+      <span class="name">opakowania z papieru i tektury</span>
+    </div>
+    <div class="item">
+      <span class="code">15 01 02</span>
+      <span class="name">opakowania z tworzyw sztucznych</span>
+    </div>
+    </div>
+</div>
+
+<script>
+function filterResults() {
+  const query = document.getElementById('searchInput').value.toLowerCase().trim();
+  const items = document.querySelectorAll('.item');
+
+  items.forEach(item => {
+    const codeEl = item.querySelector('.code');
+    const nameEl = item.querySelector('.name');
+    
+    // Zawsze pobieramy tekst bez tagów <mark>
+    const cText = codeEl.innerText;
+    const nText = nameEl.innerText;
+    const fullText = (cText + " " + nText).toLowerCase();
+
+    if (query === "") {
+      // Puste pole - pokaż wszystko bez podświetleń
+      item.classList.remove('hidden');
+      codeEl.innerHTML = cText;
+      nameEl.innerHTML = nText;
+    } else if (fullText.includes(query)) {
+      // Pasuje - pokaż i podświetl
+      item.classList.remove('hidden');
+      const regex = new RegExp(`(${query})`, 'gi');
+      codeEl.innerHTML = cText.replace(regex, '<mark>$1</mark>');
+      nameEl.innerHTML = nText.replace(regex, '<mark>$1</mark>');
+    } else {
+      // Nie pasuje - ukryj
+      item.classList.add('hidden');
+    }
+  });
+}
+</script>
+
+</body>
 <div class="main-container">
   <input type="text" id="search" class="search-box" placeholder="Szukaj (kod lub nazwa)..." oninput="filter()">
   
@@ -101,7 +170,6 @@
 <h3>Filtr wyników</h3>
 <div id="results" aria-live="polite"></div>
 </div>
-
 <script>
 /* Przykładowy zestaw — zastąp danymi z ustawy po imporcie */
 let items = [
