@@ -2,136 +2,140 @@
 <html lang="pl">
 <head>
     <meta charset="utf-8" />
-    <title>Baza Odpadów Offline</title>
+    <title>Katalog Odpadów</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <style>
         :root {
             --primary: #2196F3;
             --danger: #d32f2f;
-            --bg: #f0f2f5;
+            --bg: #f4f7f6;
         }
         body {
-            font-family: -apple-system, system-ui, sans-serif;
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0;
             padding: 0;
             background: var(--bg);
-            overscroll-behavior: none;
+            color: #333;
         }
-        .header {
-            background: #fff;
-            padding: 15px;
+        /* Nagłówek przyklejony do góry */
+        .header-sticky {
             position: sticky;
             top: 0;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            z-index: 100;
+            background: #fff;
+            padding: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
         }
         h2 {
-            margin: 0 0 10px 0;
             font-size: 14px;
             text-align: center;
+            margin: 0 0 10px 0;
             color: #555;
             text-transform: uppercase;
         }
         .search-box {
             width: 100%;
-            font-size: 16px;
+            font-size: 16px; /* 16px zapobiega auto-zoomowi na iPhone */
             padding: 12px;
-            border: 2px solid #dfe1e5;
-            border-radius: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
             box-sizing: border-box;
             outline: none;
+            -webkit-appearance: none;
         }
-        .search-box:focus { border-color: var(--primary); }
-        
-        .stats {
+        .search-box:focus {
+            border-color: var(--primary);
+        }
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
             font-size: 11px;
             color: #888;
             margin-top: 8px;
-            display: flex;
-            justify-content: space-between;
+            padding: 0 4px;
         }
-
+        /* Lista wyników */
         #results {
             padding: 10px;
         }
         .item {
             background: #fff;
             margin-bottom: 8px;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 15px;
+            border-radius: 10px;
             display: flex;
+            align-items: flex-start;
             gap: 12px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             cursor: pointer;
-            transition: transform 0.1s;
         }
         .item:active {
-            transform: scale(0.98);
             background: #e3f2fd;
+            transform: scale(0.98);
         }
-        .code {
-            font-weight: 800;
+        .code-box {
+            font-weight: bold;
             color: var(--danger);
             min-width: 75px;
-            font-family: 'Courier New', monospace;
-            font-size: 15px;
+            font-family: 'SF Mono', 'Roboto Mono', monospace;
+            font-size: 14px;
         }
-        .name {
+        .name-box {
             flex: 1;
             font-size: 14px;
-            line-height: 1.4;
-            color: #222;
+            line-height: 1.5;
         }
         mark {
             background: #ffeb3b;
             color: #000;
+            padding: 0 1px;
             border-radius: 2px;
-            padding: 0 2px;
         }
+        /* Powiadomienie o kopiowaniu */
         #toast {
             visibility: hidden;
             background: #333;
             color: #fff;
-            padding: 12px 24px;
+            padding: 12px 25px;
             position: fixed;
-            bottom: 40px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             border-radius: 50px;
-            font-size: 14px;
-            z-index: 1000;
+            font-size: 13px;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
         }
-        #toast.show { visibility: visible; animation: fadeInOut 2s; }
-        @keyframes fadeInOut {
-            0% { opacity: 0; bottom: 20px; }
-            20% { opacity: 1; bottom: 40px; }
-            80% { opacity: 1; bottom: 40px; }
-            100% { opacity: 0; bottom: 20px; }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
         }
     </style>
 </head>
 <body>
 
-<div class="header">
+<div class="header-sticky">
     <h2>Klasyfikacja Odpadów</h2>
-    <input type="text" id="searchInput" class="search-box" placeholder="Wpisz kod lub nazwę..." autocomplete="off">
-    <div class="stats">
-        <span id="counter">Wczytywanie bazy...</span>
-        <span>Kliknij, aby skopiować</span>
+    <input type="text" id="searchInput" class="search-box" placeholder="Szukaj kodu lub nazwy..." autocomplete="off">
+    <div class="info-bar">
+        <span id="counter">Wczytywanie...</span>
+        <span>Stuknij, aby skopiować</span>
     </div>
 </div>
 
-<div id="results"></div>
+<div id="results">
+    </div>
+
 <div id="toast">Skopiowano do schowka!</div>
 
 <script>
 /**
- * TWOJA BAZA DANYCH
- * Możesz tu wkleić nawet tysiące linii.
- * Składnia: {c: "KOD", n: "NAZWA"},
+ * TWOJA BAZA DANYCH - DOKŁADNA STRUKTURA
+ * Tutaj wklejaj swoje kody zachowując format {code: "...", name: "..."}
  */
-const data = [
-   {code: "01 01 01", name: "Odpady z wydobywania rud metali (np. magnetytu, hematytu, goethytu)"},
+const wasteDatabase = [
+    {code: "01 01 01", name: "Odpady z wydobywania rud metali (np. magnetytu, hematytu, goethytu)"},
     {code: "01 01 02", name: "Odpady z wydobywania surowców niemetalicznych (np. wapienia, gipsu, kamienia, żwiru)"},
     {code: "01 03 04", name: "Kwasotwórcze odpady z przeróbki rud metali zawierające siarczki"},
     {code: "01 03 05", name: "Inne odpady z przeróbki rud metali zawierające metale ciężkie (np. odpady z flotacji)"},
@@ -960,7 +964,6 @@ const data = [
     {code: "20 03 07", name: "Odpady wielkogabarytowe"},
     {code: "20 03 99", name: "Inne odpady komunalne niż wymienione w 20 03 01 do 20 03 07"}
 
-    // ... wklej tutaj resztę swoich kodów ...
 ];
 
 const resultsDiv = document.getElementById('results');
@@ -968,71 +971,74 @@ const searchInput = document.getElementById('searchInput');
 const counter = document.getElementById('counter');
 const toast = document.getElementById('toast');
 
-// Funkcja kopiowania
-function copy(text) {
-    const el = document.createElement('textarea');
-    el.value = text;
-    document.body.appendChild(el);
-    el.select();
-    document.execCommand('copy');
-    document.body.removeChild(el);
+// Funkcja kopiowania (obsługuje nowsze i starsze telefony)
+function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text);
+    } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+    }
     
-    toast.className = "show";
-    setTimeout(() => { toast.className = ""; }, 2000);
+    // Pokaż powiadomienie
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1500);
 }
 
-// Funkcja renderująca - zoptymalizowana pod szybkość
-function search(query) {
+// Funkcja filtrująca i generująca HTML
+function performSearch(query) {
     const q = query.toLowerCase().trim();
     let html = '';
-    let found = 0;
+    let foundCount = 0;
 
-    for (let i = 0; i < data.length; i++) {
-        const item = data[i];
-        if (!q || item.c.includes(q) || item.n.toLowerCase().includes(q)) {
-            found++;
+    // Szybka pętla po bazie
+    for (let i = 0; i < wasteDatabase.length; i++) {
+        const item = wasteDatabase[i];
+        const fullText = (item.code + " " + item.name).toLowerCase();
+
+        if (!q || fullText.includes(q)) {
+            foundCount++;
             
-            // Podświetlanie tylko jeśli coś wpisano
-            let displayC = item.c;
-            let displayN = item.n;
-            
+            let displayCode = item.code;
+            let displayName = item.name;
+
+            // Podświetlanie trafień
             if (q) {
-                const reg = new RegExp(`(${q})`, 'gi');
-                displayC = item.c.replace(reg, '<mark>$1</mark>');
-                displayN = item.n.replace(reg, '<mark>$1</mark>');
+                const regex = new RegExp(`(${q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')})`, 'gi');
+                displayCode = item.code.replace(regex, '<mark>$1</mark>');
+                displayName = item.name.replace(regex, '<mark>$1</mark>');
             }
 
             html += `
-                <div class="item" onclick="copy('${item.c} ${item.n}')">
-                    <div class="code">${displayC}</div>
-                    <div class="name">${displayN}</div>
+                <div class="item" onclick="copyToClipboard('${item.code} ${item.name}')">
+                    <div class="code-box">${displayCode}</div>
+                    <div class="name-box">${displayName}</div>
                 </div>`;
         }
-        // Limit wyświetlania dla płynności (opcjonalne, przy milionach rekordów)
-        if (found > 200 && q === "") break; 
+        
+        // Ograniczenie wyświetlania przy braku szukania (dla wydajności)
+        if (!q && foundCount >= 100) break;
     }
-    
+
     resultsDiv.innerHTML = html;
-    counter.innerText = `Pozycji: ${found}`;
+    counter.innerText = `Pozycji: ${foundCount}`;
+    
+    // Zapisz ostatnie wyszukiwanie w pamięci telefonu
+    localStorage.setItem('last_query', query);
 }
 
-// Obsługa wpisywania
-searchInput.addEventListener('input', (e) => search(e.target.value));
+// Reaguj na wpisywanie
+searchInput.addEventListener('input', (e) => performSearch(e.target.value));
 
-// Inicjalizacja przy starcie
-search("");
-
-// Prosty mechanizm "Cache" - zapisuje ostatnie wyszukiwanie
+// Inicjalizacja przy otwarciu (przywróć ostatnie wyszukiwanie)
 window.onload = () => {
-    const lastSearch = localStorage.getItem('lastSearch');
-    if (lastSearch) {
-        searchInput.value = lastSearch;
-        search(lastSearch);
-    }
-};
-
-searchInput.onchange = () => {
-    localStorage.setItem('lastSearch', searchInput.value);
+    const savedQuery = localStorage.getItem('last_query') || "";
+    searchInput.value = savedQuery;
+    performSearch(savedQuery);
 };
 </script>
 
