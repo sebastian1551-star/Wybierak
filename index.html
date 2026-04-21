@@ -1,179 +1,136 @@
 <!doctype html>
 <html lang="pl">
 <head>
-<meta charset="utf-8" />
-<title>KLASYFIKACJA ODPADÓW</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<style>
-  body {
-    font-family: -apple-system, sans-serif;
-    margin: 0;
-    padding: 5px;
-    background: #f0f0f2;
-    color: #222;
-  }
-  .main-container {
-    max-width: 100%;
-    margin: 0 auto;
-    background: #fff;
-    padding: 8px;
-    border-radius: 4px;
-  }
-  h2 {
-    font-size: 13px;
-    text-align: center;
-    margin: 5px 0;
-    text-transform: uppercase;
-    color: #444;
-  }
-  .search-box {
-    width: 100%;
-    font-size: 14px;
-    padding: 8px;
-    margin-bottom: 5px;
-    border: 1px solid #bbb;
-    border-radius: 3px;
-    box-sizing: border-box;
-    outline: none;
-  }
-  #results {
-    max-height: 70vh;
-    overflow-y: auto;
-    border: 1px solid #eee;
-    background: #fff;
-  }
-  
-  /* POPRAWIONY UKŁAD POZIOMY */
-  .item {
-    padding: 8px 4px;
-    border-bottom: 1px solid #f2f2f2;
-    display: flex; /* Układ obok siebie */
-    flex-direction: row;
-    align-items: flex-start;
-    font-size: 12px;
-    cursor: pointer;
-    user-select: all;
-  }
-  .item:active { background: #d0ebff; }
+    <meta charset="utf-8" />
+    <title>Katalog Odpadów</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <style>
+        :root {
+            --primary: #2196F3;
+            --danger: #d32f2f;
+            --bg: #f5f5f7;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background: var(--bg);
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            font-size: 16px;
+            text-align: center;
+            margin-top: 0;
+            color: #555;
+            letter-spacing: 1px;
+        }
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            padding-bottom: 10px;
+            z-index: 100;
+        }
+        .search-box {
+            width: 100%;
+            font-size: 16px; /* Zapobiega zoomowaniu na iPhone */
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .search-box:focus { border-color: var(--primary); }
+        
+        .stats {
+            font-size: 11px;
+            color: #888;
+            margin: 5px 0;
+            text-align: right;
+        }
 
-  .code {
-    font-weight: bold;
-    color: #d32f2f;
-    margin-right: 12px;
-    min-width: 65px;     /* Stała szerokość dla kodu */
-    white-space: nowrap; /* Kod się nie łamie */
-  }
+        #results {
+            margin-top: 10px;
+        }
+        .item {
+            padding: 12px 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: flex-start;
+            cursor: pointer;
+            -webkit-tap-highlight-color: rgba(33, 150, 243, 0.2);
+        }
+        .item:active { background: #e3f2fd; }
+        
+        .code {
+            font-weight: bold;
+            color: var(--danger);
+            min-width: 80px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .name {
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.4;
+            padding-left: 5px;
+        }
+        mark {
+            background: #ffeb3b;
+            color: #000;
+            border-radius: 2px;
+        }
+        .hidden { display: none !important; }
 
-  .name { 
-    flex: 1; 
-    line-height: 1.2;
-  }
-
-  /* STYL PODŚWIETLENIA */
-  mark {
-    background: #ffeb3b;
-    color: #000;
-    padding: 0 1px;
-    border-radius: 2px;
-  }
-
-  .hidden { display: none !important; }
-</style>
+        /* Toast notification */
+        #toast {
+            visibility: hidden;
+            min-width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 5px;
+            padding: 10px;
+            position: fixed;
+            z-index: 1000;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+        }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 1.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+    </style>
 </head>
 <body>
 
-<div class="main-container">
-  <h2>Klasyfikacja Odpadów</h2>
-  <input type="text" id="searchInput" class="search-box" placeholder="Szukaj kodu lub nazwy..." oninput="filterResults()">
-  
-  <div id="results">
-    <div class="item">
-      <span class="code">15 01 01</span>
-      <span class="name">opakowania z papieru i tektury</span>
+<div class="container">
+    <div class="sticky-header">
+        <h2>KLASYFIKACJA ODPADÓW</h2>
+        <input type="text" id="searchInput" class="search-box" placeholder="Szukaj kodu lub nazwy..." autocomplete="off">
+        <div class="stats" id="counter">Wczytywanie...</div>
     </div>
-    <div class="item">
-      <span class="code">15 01 02</span>
-      <span class="name">opakowania z tworzyw sztucznych</span>
-    </div>
-    </div>
-</div>
-
-<script>
-function filterResults() {
-  const query = document.getElementById('searchInput').value.toLowerCase().trim();
-  const items = document.querySelectorAll('.item');
-
-  items.forEach(item => {
-    const codeEl = item.querySelector('.code');
-    const nameEl = item.querySelector('.name');
     
-    // Zawsze pobieramy tekst bez tagów <mark>
-    const cText = codeEl.innerText;
-    const nText = nameEl.innerText;
-    const fullText = (cText + " " + nText).toLowerCase();
-
-    if (query === "") {
-      // Puste pole - pokaż wszystko bez podświetleń
-      item.classList.remove('hidden');
-      codeEl.innerHTML = cText;
-      nameEl.innerHTML = nText;
-    } else if (fullText.includes(query)) {
-      // Pasuje - pokaż i podświetl
-      item.classList.remove('hidden');
-      const regex = new RegExp(`(${query})`, 'gi');
-      codeEl.innerHTML = cText.replace(regex, '<mark>$1</mark>');
-      nameEl.innerHTML = nText.replace(regex, '<mark>$1</mark>');
-    } else {
-      // Nie pasuje - ukryj
-      item.classList.add('hidden');
-    }
-  });
-}
-</script>
-
-</body>
-<div class="main-container">
-  <input type="text" id="search" class="search-box" placeholder="Szukaj (kod lub nazwa)..." oninput="filter()">
-  
-  <div id="results">
-    <div class="item"><span class="code">15 01 01</span><span class="name">Opakowania z papieru i tektury</span></div>
-    <div class="item"><span class="code">15 01 02</span><span class="name">Opakowania z tworzyw sztucznych</span></div>
-    <div class="item"><span class="code">15 01 03</span><span class="name">Opakowania z drewna</span></div>
-    <div class="item"><span class="code">15 01 07</span><span class="name">Opakowania ze szkła</span></div>
-    <div class="item"><span class="code">16 02 14</span><span class="name">Zużyte urządzenia inne niż wymienione</span></div>
-    <div class="item"><span class="code">17 01 01</span><span class="name">Odpady betonu oraz gruz betonowy</span></div>
-    <div class="item"><span class="code">20 03 01</span><span class="name">Niesegregowane odpady komunalne</span></div>
-  </div>
-
-  <script>
-    function filter() {
-      let input = document.getElementById('search').value.toLowerCase();
-      let items = document.querySelectorAll('.item');
-      items.forEach(item => {
-        let text = item.textContent.toLowerCase();
-        item.classList.toggle('hidden', !text.includes(input));
-      });
-    }
-  </script>
-
-  <h2>KLASYFIKACJA ODPADÓW</h2>
-<div class="row">
-  <input id="search" placeholder="Wyszukaj kod lub nazwę..." style="flex:1"/>
-  <button id="clear">Wyczyść</button>
+    <div id="results">
+        </div>
 </div>
 
-<div class="row">
-  <button id="copySelected">Kopiuj wybrane</button>
-</div>
+<div id="toast">Skopiowano do schowka!</div>
 
-
-<h3>Filtr wyników</h3>
-<div id="results" aria-live="polite"></div>
-</div>
 <script>
-/* Przykładowy zestaw — zastąp danymi z ustawy po imporcie */
-let items = [
-  {code: "01 01 01", name: "Odpady z wydobywania rud metali (np. magnetytu, hematytu, goethytu)"},
+// TUTAJ WKLEJ SWOJE MILIONY REKORDÓW
+const wasteData = [
+   {code: "01 01 01", name: "Odpady z wydobywania rud metali (np. magnetytu, hematytu, goethytu)"},
     {code: "01 01 02", name: "Odpady z wydobywania surowców niemetalicznych (np. wapienia, gipsu, kamienia, żwiru)"},
     {code: "01 03 04", name: "Kwasotwórcze odpady z przeróbki rud metali zawierające siarczki"},
     {code: "01 03 05", name: "Inne odpady z przeróbki rud metali zawierające metale ciężkie (np. odpady z flotacji)"},
@@ -1003,154 +960,59 @@ let items = [
     {code: "20 03 99", name: "Inne odpady komunalne niż wymienione w 20 03 01 do 20 03 07"}
 ];
 
-const results = document.getElementById('results');
-const search = document.getElementById('search');
+const resultsDiv = document.getElementById('results');
+const searchInput = document.getElementById('searchInput');
+const counter = document.getElementById('counter');
+const toast = document.getElementById('toast');
 
-function render(list){
-  if(!list.length){ results.innerHTML='<div><small>Brak pozycji. Importuj dane lub doprecyzuj wyszukiwanie.</small></div>'; return; }
-  results.innerHTML = list.map((it, idx)=>`
-    <div class="item" data-idx="${idx}">
-      <div style="display:flex;align-items:center;gap:8px">
-        <input type="checkbox" class="chk" data-idx="${idx}" />
-        <div class="code">${it.code}</div>
-        <div class="name">${escapeHtml(it.name)}</div>
-      </div>
-      <div style="min-width:180px;text-align:right">
-        <button class="copyBtn" data-code="${it.code}">Kopiuj kod</button>
-      </div>
-    </div>`).join('');
-  attachListeners();
-}
+// Funkcja renderująca listę
+function render(data, filter = "") {
+    let html = "";
+    let count = 0;
+    
+    const regex = filter ? new RegExp(`(${filter})`, 'gi') : null;
 
-function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    data.forEach(item => {
+        const fullText = item.code + " " + item.name;
+        if (!filter || fullText.toLowerCase().includes(filter.toLowerCase())) {
+            count++;
+            let displayCode = item.code;
+            let displayName = item.name;
 
-function attachListeners(){
-  document.querySelectorAll('.copyBtn').forEach(b=>{
-    b.onclick = ()=>{ navigator.clipboard?.writeText(b.dataset.code).then(()=>alert('Skopiowano: '+b.dataset.code)).catch(()=>alert('Kopiowanie niedostępne')); }
-  });
-  document.querySelectorAll('.toggleBtn').forEach(b=>{
-    b.onclick = ()=>{
-      const idx = b.dataset.idx;
-      const el = b.closest('.item').querySelector('.name');
-      alert(items[idx].code + ' — ' + items[idx].name);
-    }
-  });
-  document.querySelectorAll('.chk').forEach(cb=>{
-    cb.onchange = ()=> cb.closest('.item').classList.toggle('selected', cb.checked);
-  });
-}
+            if (regex) {
+                displayCode = item.code.replace(regex, '<mark>$1</mark>');
+                displayName = item.name.replace(regex, '<mark>$1</mark>');
+            }
 
-/* Search/filter logic */
-function filterAndRender(){
-  const q = search.value.trim().toLowerCase();
-  if(!q){ render(items); return; }
-  const byCode = items.filter(it=>it.code.replace(/\s+/g,'').includes(q.replace(/\s+/g,'')));
-  const byName = items.filter(it=>it.name.toLowerCase().includes(q));
-  // merge unique, prefer code matches first
-  const merged = [...byCode];
-  byName.forEach(it=>{ if(!merged.find(m=>m.code===it.code)) merged.push(it); });
-  render(merged);
-}
-
-/* Controls */
-document.getElementById('clear').onclick = ()=>{ search.value=''; filterAndRender(); };
-search.addEventListener('input', filterAndRender);
-document.getElementById('selectAll').onclick = ()=> document.querySelectorAll('.chk').forEach(cb=>{ cb.checked=true; cb.dispatchEvent(new Event('change')); });
-document.getElementById('deselectAll').onclick = ()=> document.querySelectorAll('.chk').forEach(cb=>{ cb.checked=false; cb.dispatchEvent(new Event('change')); });
-
-document.getElementById('exportCsv').onclick = ()=>{
-  const selected = Array.from(document.querySelectorAll('.chk')).filter(cb=>cb.checked).map(cb=>items[cb.dataset.idx]);
-  if(!selected.length){ alert('Brak zaznaczonych pozycji'); return; }
-  const csv = 'code,name\\n' + selected.map(it=>`"${it.code.replace(/"/g,'""')}","${it.name.replace(/"/g,'""')}"`).join('\\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'selected_waste_codes.csv'; a.click(); URL.revokeObjectURL(url);
-};
-
-document.getElementById('copySelected').onclick = ()=>{
-  const selected = Array.from(document.querySelectorAll('.chk')).filter(cb=>cb.checked).map(cb=>items[cb.dataset.idx]);
-  if(!selected.length){ alert('Brak zaznaczonych pozycji'); return; }
-  const txt = selected.map(it=>it.code + ' - ' + it.name).join('\\n');
-  navigator.clipboard?.writeText(txt).then(()=>alert('Skopiowano wybrane')).catch(()=>alert('Kopiowanie niedostępne'));
-};
-
-/* Import from paste area */
-document.getElementById('parsePaste').onclick = ()=>{
-  const raw = document.getElementById('pasteArea').value.trim();
-  if(!raw){ alert('Brak tekstu w polu'); return; }
-  const parsed = parseLines(raw);
-  if(parsed.length){ items = parsed; filterAndRender(); alert('Zaimportowano ' + parsed.length + ' pozycji'); }
-  else alert('Nie znaleziono poprawnych linii. Upewnij się, że używasz formatu: KOD - NAZWA');
-};
-
-/* File import (CSV / JSON / TXT) */
-document.getElementById('fileInput').addEventListener('change', async (e)=>{
-  const f = e.target.files[0];
-  if(!f) return;
-  const txt = await f.text();
-  let parsed = [];
-  if(f.name.toLowerCase().endsWith('.json')){
-    try{ const j = JSON.parse(txt); if(Array.isArray(j)) parsed = j.map(normalize); }
-    catch(err){ alert('Błąd parsowania JSON: '+err.message); }
-  } else {
-    // try CSV or plain lines
-    // split lines and parse each
-    parsed = parseLines(txt);
-    // also try CSV with header code,name
-    if(!parsed.length){
-      const lines = txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      // detect separator
-      const sep = lines[0].includes(';') ? ';' : (lines[0].includes(',') ? ',' : null);
-      if(sep){
-        const [hdr, ...rest] = lines;
-        const cols = hdr.split(sep).map(s=>s.trim().toLowerCase());
-        const codeIdx = cols.indexOf('code')>=0?cols.indexOf('code'): (cols.indexOf('kod')>=0?cols.indexOf('kod'):-1);
-        const nameIdx = cols.indexOf('name')>=0?cols.indexOf('name'): (cols.indexOf('nazwa')>=0?cols.indexOf('nazwa'):-1);
-        if(codeIdx>=0 && nameIdx>=0){
-          parsed = rest.map(l=>l.split(sep)).map(parts=>({code:parts[codeIdx].trim(), name:parts[nameIdx].trim()})).filter(Boolean);
+            html += `
+                <div class="item" onclick="copyText('${item.code} ${item.name}')">
+                    <span class="code">${displayCode}</span>
+                    <span class="name">${displayName}</span>
+                </div>`;
         }
-      }
-    }
-  }
-  if(parsed.length){ items = parsed; filterAndRender(); alert('Zaimportowano ' + parsed.length + ' pozycji z pliku'); } 
-  else alert('Nie udało się rozpoznać danych w pliku.');
+    });
+
+    resultsDiv.innerHTML = html;
+    counter.innerText = `Znaleziono: ${count}`;
+}
+
+// Kopiowanie do schowka
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        toast.className = "show";
+        setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2000);
+    });
+}
+
+// Obsługa wyszukiwania
+searchInput.addEventListener('input', (e) => {
+    const val = e.target.value.trim();
+    render(wasteData, val);
 });
 
-function normalize(o){
-  if(!o) return null;
-  return {code:(o.code||o.kod||o.KOD||'').trim(), name:(o.name||o.nazwa||o.NAZWA||o.Name||'').trim()};
-}
-
-/* parse lines like "20 01 01 - Papier i tektura" or "200101;Papier i tektura" */
-function parseLines(text){
-  const lines = text.split(/\\r?\\n/).map(l=>l.trim()).filter(Boolean);
-  const out = [];
-  for(const l of lines){
-    // try "code - name" or "code;name" or "code,name"
-    let m = l.match(/^([0-9\\s]{2,10}[-0-9\\s]*)\\s[-–—:]\\s(.+)$/);
-    if(!m){
-      m = l.match(/^([^;,]+)[;,]\\s*(.+)$/);
-    }
-    if(!m){
-      // try first token code-like and rest name
-      const firstTok = l.split(/\s+/)[0];
-      if(/^[0-9]{2,}([0-9\\s-]*)$/.test(firstTok)){
-        const code = firstTok;
-        const name = l.slice(firstTok.length).replace(/^[-–—:\\s]+/,'').trim();
-        if(name) out.push({code:code.trim(), name:name});
-        continue;
-      }
-      continue;
-    }
-    const code = m[1].trim();
-    const name = m[2].trim();
-    out.push({code, name});
-  }
-  return out;
-}
-
-/* initial render */
-filterAndRender();
+// Inicjalizacja
+render(wasteData);
 </script>
+
 </body>
 </html>
