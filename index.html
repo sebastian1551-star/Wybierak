@@ -2,134 +2,135 @@
 <html lang="pl">
 <head>
     <meta charset="utf-8" />
-    <title>Katalog Odpadów</title>
+    <title>Baza Odpadów Offline</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <style>
         :root {
             --primary: #2196F3;
             --danger: #d32f2f;
-            --bg: #f5f5f7;
+            --bg: #f0f2f5;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, system-ui, sans-serif;
             margin: 0;
-            padding: 10px;
+            padding: 0;
             background: var(--bg);
-            color: #333;
+            overscroll-behavior: none;
         }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
+        .header {
             background: #fff;
             padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h2 {
-            font-size: 16px;
-            text-align: center;
-            margin-top: 0;
-            color: #555;
-            letter-spacing: 1px;
-        }
-        .sticky-header {
             position: sticky;
             top: 0;
-            background: #fff;
-            padding-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             z-index: 100;
+        }
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            text-align: center;
+            color: #555;
+            text-transform: uppercase;
         }
         .search-box {
             width: 100%;
-            font-size: 16px; /* Zapobiega zoomowaniu na iPhone */
+            font-size: 16px;
             padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
+            border: 2px solid #dfe1e5;
+            border-radius: 10px;
             box-sizing: border-box;
             outline: none;
-            transition: border-color 0.3s;
         }
         .search-box:focus { border-color: var(--primary); }
         
         .stats {
             font-size: 11px;
             color: #888;
-            margin: 5px 0;
-            text-align: right;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
         }
 
         #results {
-            margin-top: 10px;
+            padding: 10px;
         }
         .item {
-            padding: 12px 8px;
-            border-bottom: 1px solid #eee;
+            background: #fff;
+            margin-bottom: 8px;
+            padding: 12px;
+            border-radius: 8px;
             display: flex;
-            align-items: flex-start;
+            gap: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             cursor: pointer;
-            -webkit-tap-highlight-color: rgba(33, 150, 243, 0.2);
+            transition: transform 0.1s;
         }
-        .item:active { background: #e3f2fd; }
-        
+        .item:active {
+            transform: scale(0.98);
+            background: #e3f2fd;
+        }
         .code {
-            font-weight: bold;
+            font-weight: 800;
             color: var(--danger);
-            min-width: 80px;
-            font-family: monospace;
-            font-size: 14px;
+            min-width: 75px;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
         }
         .name {
             flex: 1;
             font-size: 14px;
             line-height: 1.4;
-            padding-left: 5px;
+            color: #222;
         }
         mark {
             background: #ffeb3b;
             color: #000;
             border-radius: 2px;
+            padding: 0 2px;
         }
-        .hidden { display: none !important; }
-
-        /* Toast notification */
         #toast {
             visibility: hidden;
-            min-width: 200px;
-            background-color: #333;
+            background: #333;
             color: #fff;
-            text-align: center;
-            border-radius: 5px;
-            padding: 10px;
+            padding: 12px 24px;
             position: fixed;
-            z-index: 1000;
-            bottom: 30px;
+            bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
+            border-radius: 50px;
             font-size: 14px;
+            z-index: 1000;
         }
-        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 1.5s; }
-        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
-        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+        #toast.show { visibility: visible; animation: fadeInOut 2s; }
+        @keyframes fadeInOut {
+            0% { opacity: 0; bottom: 20px; }
+            20% { opacity: 1; bottom: 40px; }
+            80% { opacity: 1; bottom: 40px; }
+            100% { opacity: 0; bottom: 20px; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="sticky-header">
-        <h2>KLASYFIKACJA ODPADÓW</h2>
-        <input type="text" id="searchInput" class="search-box" placeholder="Szukaj kodu lub nazwy..." autocomplete="off">
-        <div class="stats" id="counter">Wczytywanie...</div>
+<div class="header">
+    <h2>Klasyfikacja Odpadów</h2>
+    <input type="text" id="searchInput" class="search-box" placeholder="Wpisz kod lub nazwę..." autocomplete="off">
+    <div class="stats">
+        <span id="counter">Wczytywanie bazy...</span>
+        <span>Kliknij, aby skopiować</span>
     </div>
-    
-    <div id="results">
-        </div>
 </div>
 
+<div id="results"></div>
 <div id="toast">Skopiowano do schowka!</div>
 
 <script>
-// TUTAJ WKLEJ SWOJE MILIONY REKORDÓW
-const wasteData = [
+/**
+ * TWOJA BAZA DANYCH
+ * Możesz tu wkleić nawet tysiące linii.
+ * Składnia: {c: "KOD", n: "NAZWA"},
+ */
+const data = [
    {code: "01 01 01", name: "Odpady z wydobywania rud metali (np. magnetytu, hematytu, goethytu)"},
     {code: "01 01 02", name: "Odpady z wydobywania surowców niemetalicznych (np. wapienia, gipsu, kamienia, żwiru)"},
     {code: "01 03 04", name: "Kwasotwórcze odpady z przeróbki rud metali zawierające siarczki"},
@@ -958,6 +959,8 @@ const wasteData = [
     {code: "20 03 06", name: "Odpady specjalne (np. odpady z wielkich gabarytów)"},
     {code: "20 03 07", name: "Odpady wielkogabarytowe"},
     {code: "20 03 99", name: "Inne odpady komunalne niż wymienione w 20 03 01 do 20 03 07"}
+
+    // ... wklej tutaj resztę swoich kodów ...
 ];
 
 const resultsDiv = document.getElementById('results');
@@ -965,53 +968,72 @@ const searchInput = document.getElementById('searchInput');
 const counter = document.getElementById('counter');
 const toast = document.getElementById('toast');
 
-// Funkcja renderująca listę
-function render(data, filter = "") {
-    let html = "";
-    let count = 0;
+// Funkcja kopiowania
+function copy(text) {
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
     
-    const regex = filter ? new RegExp(`(${filter})`, 'gi') : null;
+    toast.className = "show";
+    setTimeout(() => { toast.className = ""; }, 2000);
+}
 
-    data.forEach(item => {
-        const fullText = item.code + " " + item.name;
-        if (!filter || fullText.toLowerCase().includes(filter.toLowerCase())) {
-            count++;
-            let displayCode = item.code;
-            let displayName = item.name;
+// Funkcja renderująca - zoptymalizowana pod szybkość
+function search(query) {
+    const q = query.toLowerCase().trim();
+    let html = '';
+    let found = 0;
 
-            if (regex) {
-                displayCode = item.code.replace(regex, '<mark>$1</mark>');
-                displayName = item.name.replace(regex, '<mark>$1</mark>');
+    for (let i = 0; i < data.length; i++) {
+        const item = data[i];
+        if (!q || item.c.includes(q) || item.n.toLowerCase().includes(q)) {
+            found++;
+            
+            // Podświetlanie tylko jeśli coś wpisano
+            let displayC = item.c;
+            let displayN = item.n;
+            
+            if (q) {
+                const reg = new RegExp(`(${q})`, 'gi');
+                displayC = item.c.replace(reg, '<mark>$1</mark>');
+                displayN = item.n.replace(reg, '<mark>$1</mark>');
             }
 
             html += `
-                <div class="item" onclick="copyText('${item.code} ${item.name}')">
-                    <span class="code">${displayCode}</span>
-                    <span class="name">${displayName}</span>
+                <div class="item" onclick="copy('${item.c} ${item.n}')">
+                    <div class="code">${displayC}</div>
+                    <div class="name">${displayN}</div>
                 </div>`;
         }
-    });
-
+        // Limit wyświetlania dla płynności (opcjonalne, przy milionach rekordów)
+        if (found > 200 && q === "") break; 
+    }
+    
     resultsDiv.innerHTML = html;
-    counter.innerText = `Znaleziono: ${count}`;
+    counter.innerText = `Pozycji: ${found}`;
 }
 
-// Kopiowanie do schowka
-function copyText(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        toast.className = "show";
-        setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2000);
-    });
-}
+// Obsługa wpisywania
+searchInput.addEventListener('input', (e) => search(e.target.value));
 
-// Obsługa wyszukiwania
-searchInput.addEventListener('input', (e) => {
-    const val = e.target.value.trim();
-    render(wasteData, val);
-});
+// Inicjalizacja przy starcie
+search("");
 
-// Inicjalizacja
-render(wasteData);
+// Prosty mechanizm "Cache" - zapisuje ostatnie wyszukiwanie
+window.onload = () => {
+    const lastSearch = localStorage.getItem('lastSearch');
+    if (lastSearch) {
+        searchInput.value = lastSearch;
+        search(lastSearch);
+    }
+};
+
+searchInput.onchange = () => {
+    localStorage.setItem('lastSearch', searchInput.value);
+};
 </script>
 
 </body>
